@@ -1,0 +1,163 @@
+Prometheus & Grafana SetUp
+================================
+
+Take 1 Prometheus instance with t3.medium
+Take 1 Node-1 instance with t3.micro
+----------------------------------------------
+
+In Prometheus Server:
+sudo su -
+cd /opt/  (Chrome Download Prometheus --> https://prometheus.io/download/)
+wget https://github.com/prometheus/prometheus/releases/download/v2.53.1/prometheus-2.53.1.linux-amd64.tar.gz   
+tar -xf prometheus-2.53.1.linux-amd64.tar.gz
+ll
+mv prometheus-2.53.1.linux-amd64 prometheus   (Renaming)
+ll
+
+in concepts --> prometheus.MD file --> Copy1 
+vim /etc/systemd/system/prometheus.service  --> Paste that code in newly created file
+systemctl start prometheus
+systemctl enable prometheus
+systemctl status prometheus
+Take Public IP:9090 (In chrome)  --> up[1m] --> tap execute
+---------------------------------
+
+If we need to  monitor underlying servers install NODE EXPORTER component in that nodes
+
+IN NODE-1 instance
+
+sudo su -
+cd /opt/
+wget https://github.com/prometheus/node_exporter/releases/download/v1.8.2/node_exporter-1.8.2.linux-amd64.tar.gz  (Node exporter)
+ll
+tar -xf node_exporter-1.8.2.linux-amd64.tar.gz
+mv node_exporter-1.8.2.linux-amd64 node_exporter
+vim /etc/systemd/system/node_exporter.service
+systemctl start node_exporter
+systemctl enable  node_exporter
+systemctl status  node_exporter
+
+----------------------------------------------
+
+Q) TO MONITOR THE NODE H systemctl restart prometheus
+
+18.212.148.60 | 172.31.33.154 | t3.medium | null
+[ root@ip-172-31-33-154 /opt/prometheus ]# systemctl status prometheusW DOES PROMETHEUS KNOW?
+ANS) Need to go to Prometheus configuration and give node details.
+
+Prometheus configuration file? --> Prometheus.yaml
+
+cd /opt/prometheus
+vim prometheus.yaml  --> paste prometheus.yaml file content
+ systemctl restart prometheus
+ systemctl status prometheus
+
+---------------------------------------------
+
+install Grafana in Prometheus instance
+
+URL: https://grafana.com/docs/grafana/latest/setup-grafana/installation/redhat-rhel-fedora/
+https://rpm.grafana.com/gpg.key --> Paste in chrome
+cd --> Come out compeltely in Prometheus instance
+vim gpg.key --> Paste
+sudo rpm --import gpg.key
+vi /etc/yum.repos.d/grafana.repo   --> Paste below code
+
+[grafana]
+name=grafana
+baseurl=https://rpm.grafana.com
+repo_gpgcheck=1
+enabled=1
+gpgcheck=1
+gpgkey=https://rpm.grafana.com/gpg.key
+sslverify=1
+sslcacert=/etc/pki/tls/certs/ca-bundle.crt
+
+
+dnf install grafana -y
+systemctl daemon-reload
+systemctl start grafana-server
+systemctl enable grafana-server
+systemctl status grafana-server
+netstat -lntp
+18.212.148.60:3000 --> Chrome
+admin 2 times
+admin123 2 times --> New Password
+
+============================================
+To connect Grafana to prometheus
+Left Side bar --> connections --> search (Prometheus) -->  Add New Datasource
+http://localhost:9090 --> connections URL
+
+Click Dashboard --> Add New Dashboard --> search (Prometheus) --> below code --> type up
+Options --> Legend --> Custom --> name
+Right Side --> Guage --> 1 red 0 Green --> Save --> Apply
+
+
+===============================================
+To import Custom Dashboard
+Dashboard --> New --> 1860 (Node Exporter Full) --> Datasource (Prometheus) --> import
+
+
+
+
+===============================
+SERVICE discovery  -->  By using this component in cloud environments we can find dynamic host and we can do monitor
+OR
+it finds the nodes automatically and add them to scrape list
+
+Create 2 Dynamic Server 
+RUN  BELOW COMMANDS FOR BOTH INSTANCES
+
+sudo su -
+mv /opt/
+wget https://github.com/prometheus/node_exporter/releases/download/v1.8.2/node_exporter-1.8.2.linux-amd64.tar.gz
+ tar -xf node_exporter-1.8.2.linux-amd64.tar.gz
+ mv node_exporter-1.8.2.linux-amd64.tar.gz node_exporter
+ vim /etc/systemd/system/node_exporter.service  -->Paste that prometheus.MD (Node Exporter)
+ systemctl start node_exporter
+ systemctl enable node_exporter
+ systemctl status node_exporter
+ netstat -lntp
+
+ ===========================================================
+
+ Entire instances in that region will describe and what ever the tag is ture that will only scrape the INSTANCES
+
+ Next GO TO Prometheus Server --> cd /opt/prometheus --> vi prometheus.yaml --> past that
+ systemctl restart prometheus
+ systemctl status prometheus
+
+Inside /opt/prometheus/
+mkdir alert-rules
+cd alert-rules
+ vim instancedown.yaml
+
+ groups:
+- name: instanceDown
+  rules:
+  - alert: InstanceDownAlert
+    expr: up <1
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      summary: instance is Down
+
+
+Now Install Alert Manager
+====================================
+cd /opt/
+wget https://github.com/prometheus/alertmanager/releases/download/v0.27.0/alertmanager-0.27.0.linux-amd64.tar.gz
+tar -xf alertmanager-0.27.0.linux-amd64.tar.gz
+ mv alertmanager-0.27.0.linux-amd64 alertmanager
+
+
+
+
+
+
+
+
+
+
