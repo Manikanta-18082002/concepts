@@ -152,6 +152,25 @@ wget https://github.com/prometheus/alertmanager/releases/download/v0.27.0/alertm
 tar -xf alertmanager-0.27.0.linux-amd64.tar.gz
  mv alertmanager-0.27.0.linux-amd64 alertmanager
 
+vim /etc/systemd/system/alertmanager.service  --> Paste Below Code
+
+[Unit]
+Description=Alertmanager
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/alertmanager/
+ExecStart=/opt/alertmanager/alertmanager --config.file=/opt/alertmanager/alertmanager.yml 
+
+[Install]
+WantedBy=multi-user.target
+
+systemctl start alertmanager
+systemctl enable alertmanager
+systemctl status alertmanager
+netstat -lntp
 
 
 
